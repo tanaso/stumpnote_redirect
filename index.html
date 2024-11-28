@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redirect</title>
+  </head>
+  <body>
+    <script>
+      var urlParams = new URLSearchParams(window.location.search);
+      var code = urlParams.get("code");
+      if (code == null){
+        // window.location.replace(
+	    //     // ✅ここは適宜書き換える
+        //   "https://自分のGitHubのID.github.io/notion-web/redirects/fallback.html"
+        // );
+      } else {
+        window.location.replace(
+          "myapp://oauth/callback?code=" + code
+        );
+      }
+    </script>
+  </body>
+</html>
