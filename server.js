@@ -11,107 +11,40 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Notion APIの設定
-const NOTION_API_BASE = "https://api.notion.com/v1";
-const NOTION_API_VERSION = "2022-06-28";
+// In-memory storage for access tokens (replace with a database in production)
+let accessTokenStore = null;
 
-// ルート
-app.get("/", (req, res) => {
-  res.send("Backend is running!");
-  console.log(req.body);
-});
+// Notion APIエンドポイント
+const NOTION_TOKEN_URL = "https://api.notion.com/v1/oauth/token";
 
-app.get("/auth/callback", async (req, res) => {
+// エンドポイント: Notionのリダイレクト先
+app.get("/auth/callback", (req, res) => {
     const code = req.query.code;
   
     if (!code) {
-      res.status(400).json({ error: "No code provided" });
-      return;
+      return res.status(400).json({ error: "Authorization code is missing" });
     }
-
-    axios.post(
-        "myapp://oauth/callback?code=" + code
-    )
   
-    // try {
-    //   const tokenResponse = await axios.post(
-    //     "https://api.notion.com/v1/oauth/token",
-    //     {
-    //       grant_type: "authorization_code",
-    //       code,
-    //       redirect_uri: process.env.NOTION_REDIRECT_URI,
-    //       client_id: process.env.NOTION_CLIENT_ID,
-    //       client_secret: process.env.NOTION_CLIENT_SECRET,
-    //     },
-    //     {
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //     }
-    //   );
-  
-    //   console.log("Access Token:", tokenResponse.data.access_token);
-    // //   res.json(tokenResponse.data); // アクセストークンをフロントエンドに返却
-    //     window.location.replace(
-    //         "myapp://oauth/callback?code=" + code
-    //     );
-    // } catch (error) {
-    //   console.error("Error fetching token:", error.response?.data || error.message);
-    //   res.status(500).json({ error: "Failed to fetch token" });
-    // }
+    try {
+      // 認証コードをReact Nativeに返す
+      console.log("Authorization Code:", code);
+      res.json({ code });
+    } catch (error) {
+      console.error("Error handling callback:", error.message);
+      res.status(500).json({ error: "Failed to handle authorization callback" });
+    }
 });
-  
 
-// Notion OAuthトークン取得エンドポイント
-app.post("/auth/token", async (req, res) => {
-  const { code } = req.body;
-
-  try {
-    const response = await axios.post(
-      "https://api.notion.com/v1/oauth/token",
-      {
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: process.env.NOTION_REDIRECT_URI,
-        client_id: process.env.NOTION_CLIENT_ID,
-        client_secret: process.env.NOTION_CLIENT_SECRET,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    // アクセストークンを返却
-    res.json(response.data);
-  } catch (error) {
-    console.error("Error fetching token:", error.response?.data || error.message);
-    res.status(500).json({ error: "Failed to fetch token" });
+// エンドポイント: React Nativeクライアントがアクセストークンを取得
+app.get("/get-token", (req, res) => {
+  if (!accessTokenStore) {
+    return res.status(404).json({ error: "No access token available" });
   }
+
+  res.json({ access_token: accessTokenStore });
 });
 
-// Notion APIを使用してユーザーのページリストを取得
-app.post("/notion/pages", async (req, res) => {
-  const { accessToken } = req.body;
-
-  try {
-    const response = await axios.get(`${NOTION_API_BASE}/databases`, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Notion-Version": NOTION_API_VERSION,
-      },
-    });
-
-    // データベースリストを返却
-    res.json(response.data);
-  } catch (error) {
-    console.error("Error fetching pages:", error.response?.data || error.message);
-    res.status(500).json({ error: "Failed to fetch pages" });
-  }
-});
-
-// サーバーを起動
+// サーバー起動
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Proxy server is running on http://localhost:${PORT}`);
 });

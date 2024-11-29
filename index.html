@@ -9,14 +9,17 @@
     <script>
       var urlParams = new URLSearchParams(window.location.search);
       var code = urlParams.get("code");
-      if (code == null){
+      
+      if (code == null) {
+        document.body.innerHTML = "<p>No code found.</p>";
         // window.location.replace(
-	    //     // ✅ここは適宜書き換える
         //   "https://自分のGitHubのID.github.io/notion-web/redirects/fallback.html"
         // );
       } else {
+        document.body.innerHTML = "<p>Code: " + code + "</p>";
+        // Optional: redirect after showing the code
         window.location.replace(
-          "myapp://oauth/callback?code=" + code
+          "stumpnotion://oauth/callback?code=" + code
         );
       }
     </script>
